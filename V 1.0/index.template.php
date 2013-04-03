@@ -1,6 +1,10 @@
 <?php
 /**
  * Route - PHP REST Framework
+ *
+ * @author: Ajinkya Apte
+ * @codeRepository: https://github.com/ajinkya-apte/route.git
+ *
  * @file: Sample landing page.
  *
  * @annotationFormat: @<HTTP method type>='<URL>'
@@ -10,8 +14,7 @@
  *                  3. URL input without type check => /:id/ or /:/
  *                  4. Wildcard => /#/
  *
- * @configurationFile: route/config/route.config
- *
+ * @configurationFile: route/config/route.config *
  *
  * @success: Calls the user defined function based on the annotation
  * @error: HTTP 500

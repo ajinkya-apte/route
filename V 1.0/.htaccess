@@ -1,0 +1,4 @@
+RewriteEngine on
+RewriteCond %{REQUEST_URI} !/index.php$
+RewriteCond %{REMOTE_HOST} !^000\.000\.000\.000
+RewriteRule $ /index.php [QSA,L]

@@ -11,8 +11,8 @@
  * Date: 3/23/13
  * Time: 12:32 PM
  */
-require_once('config/config.php');
-require_once('lib/RouteLib.class.php');
+require_once(dirname(__FILE__).'/config/config.php');
+require_once(dirname(__FILE__).'/lib/RouteLib.class.php');
 
 function run($url, $port, $getFromRouteConfigFile=true) {
     $routeLib = new RouteLib($url, $port, populateFromRouteConfig($getFromRouteConfigFile));

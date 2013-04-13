@@ -176,7 +176,8 @@ class RouteLib {
     function callUsersFunction() {
 
         $requestMethod = $_SERVER['REQUEST_METHOD'];
-        $requestURI = $_SERVER['REQUEST_URI'];
+        $requestURIWithGetParams = explode("?", $_SERVER['REQUEST_URI']);
+        $requestURI = $requestURIWithGetParams[0];
 
         $routeArray = $this->makeRouteArray($requestMethod);
         $previousArray = $routeArray[$requestMethod];

@@ -248,6 +248,11 @@ class RouteLib {
             }
         }
 
+        //Edge case: Check for default '/' and if yes call that function
+        if($countRequestURIArray == 0 && isset($routeArray[$requestMethod]["#"])) {
+            $userMethod = $previousArray["#"];
+        }
+
         if($userMethod == "") {
             header('HTTP/1.1 404 Not found', true, 404);
             exit(0);

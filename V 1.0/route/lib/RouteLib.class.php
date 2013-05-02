@@ -14,45 +14,38 @@
  */
 
 class RouteLib {
-    private $url;
-    private $port;
-    private $routeClass;
-    private $isGETAllowed;
-    private $isPOSTAllowed;
-    private $isPUTAllowed;
-    private $isDELETEAllowed;
+    private $url = 'localhost';
+    private $port = '80';
+    private $routeClass = 'Route';
+    private $isGETAllowed = true;
+    private $isPOSTAllowed = true;
+    private $isPUTAllowed = true;
+    private $isDELETEAllowed = true;
+    private $timerCallback = null;
 
     function __construct($url, $port, $routeConfig) {
         $this->url = $url;
         $this->port = $port;
-        $this->routeClass = $routeConfig['routeClassName'];
-        $routeHttpProtocols = explode(",",$routeConfig['routeHttpProtocols']);
-        if(in_array("GET", $routeHttpProtocols)) {
-            $this->isGETAllowed = true;
-        }
-        else {
+        $this->routeClass = $routeConfig[ROUTE_CONFIG_CLASS_NAME_VAR];
+        $routeHttpProtocols = explode(",",$routeConfig[ROUTE_CONFIG_HTTP_PROTOCOLS_VAR]);
+        if(!in_array("GET", $routeHttpProtocols)) {
             $this->isGETAllowed = false;
         }
 
-        if(in_array("POST", $routeHttpProtocols)) {
-            $this->isPOSTAllowed = true;
-        }
-        else {
+        if(!in_array("POST", $routeHttpProtocols)) {
             $this->isPOSTAllowed = false;
         }
 
-        if(in_array("PUT", $routeHttpProtocols)) {
-            $this->isPUTAllowed = true;
-        }
-        else {
+        if(!in_array("PUT", $routeHttpProtocols)) {
             $this->isPUTAllowed = false;
         }
 
-        if(in_array("DELETE", $routeHttpProtocols)) {
-            $this->isDELETEAllowed = true;
-        }
-        else {
+        if(!in_array("DELETE", $routeHttpProtocols)) {
             $this->isDELETEAllowed = false;
+        }
+
+        if(isset($routeConfig[ROUTE_CONFIG_TIMER_CALLBACK_VAR])) {
+            $this->timerCallback = $routeConfig[ROUTE_CONFIG_TIMER_CALLBACK_VAR];
         }
     }
 
@@ -176,7 +169,7 @@ class RouteLib {
     function callUsersFunction() {
 
         $requestMethod = $_SERVER['REQUEST_METHOD'];
-        $requestURIWithGetParams = explode("?", $_SERVER['REQUEST_URI']);
+        $requestURIWithGetParams = explode("?",$_SERVER['REQUEST_URI']);
         $requestURI = $requestURIWithGetParams[0];
 
         $routeArray = $this->makeRouteArray($requestMethod);
@@ -250,14 +243,39 @@ class RouteLib {
 
         //Edge case: Check for default '/' and if yes call that function
         if($countRequestURIArray == 0 && isset($routeArray[$requestMethod]["#"])) {
-            $userMethod = $previousArray["#"];
+            $userMethod = $routeArray[$requestMethod]["#"];
         }
 
         if($userMethod == "") {
             header('HTTP/1.1 404 Not found', true, 404);
             exit(0);
         }
+
+        $startLogTime = microtime(true);
         call_user_func_array( array( new $this->routeClass, $userMethod), $functionArguments );
+        $endLogTime = microtime(true);
+
+        if($this->timerCallback !== null) {
+            $elapsedTime = $endLogTime - $startLogTime;
+            $logArguments = array(
+                'callerClass' => $this->routeClass,
+                'startTime'=> $startLogTime,
+                'endTime'=> $endLogTime,
+                'elapsedTime'=> $elapsedTime,
+                'requestMethod' => $requestMethod,
+                'url' => $requestURI,
+                'userMethod'=> $userMethod,
+                'functionalArguments' => $functionArguments
+            );
+
+            if(strpos($this->timerCallback, ".") !== false) {
+                $classMethodArray = explode(".", $this->timerCallback);
+                call_user_func( array( $classMethodArray[0], $classMethodArray[1]), $logArguments);
+            }
+            else {
+                call_user_func($this->timerCallback, $logArguments);
+            }
+        }
     }
 
     function run() {

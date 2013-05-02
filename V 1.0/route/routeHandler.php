@@ -23,10 +23,15 @@ function run($url, $port, $getFromRouteConfigFile=true) {
 function populateFromRouteConfig($getFromRouteConfigFile=true) {
     $routeConfig = array(
         'routeHttpProtocols'=>'GET,POST,PUT,DELETE',
-        'routeClassName'=>'Route'
+        'routeClassName'=>'Route',
+        'timerCallback'=>'Util.logTime'
     );
 
     if(!$getFromRouteConfigFile) {
+        if(!verifyRouteConfigArray($routeConfig)) {
+            header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_BAD_ROUTE_CONFIG_VAR, true, 500);
+            exit(0);
+        }
         return $routeConfig;
     }
 
@@ -46,20 +51,57 @@ function populateFromRouteConfig($getFromRouteConfigFile=true) {
                     header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_BAD_ROUTE_CONFIG_VAR, true, 500);
                     exit(0);
                 }
-                $routeConfig['routeHttpProtocols'] = $routeConfigLandingPageArray[1];
+                $routeConfig[ROUTE_CONFIG_HTTP_PROTOCOLS_VAR] = $routeConfigLandingPageArray[1];
             }
-            else if(strpos($line, ROUTE_CONFIG_LANDING_PAGE_VAR) !== false) {
+            else if(strpos($line, ROUTE_CONFIG_CLASS_NAME_VAR) !== false) {
                 $routeConfigLandingPageArray = explode('=', $line);
-                if(!isset($routeConfigLandingPageArray[1]) || (isset($routeConfigLandingPageArray[1]) && !file_exists(dirname(__FILE__).'/../'.$routeConfigLandingPageArray[1]))) {
+                if(!isset($routeConfigLandingPageArray[1])) {
                     fclose($routeConfigFH);
                     header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_BAD_ROUTE_CONFIG_VAR, true, 500);
                     exit(0);
                 }
-                require_once(dirname(__FILE__).'/../'.$routeConfigLandingPageArray[1]);
-                $routeConfig['routeClassName'] = $routeConfigLandingPageArray[1];
+                $routeConfig[ROUTE_CONFIG_CLASS_NAME_VAR] = $routeConfigLandingPageArray[1];
+            }
+            else if(strpos($line, ROUTE_CONFIG_TIMER_CALLBACK_VAR) !== false) {
+                $routeConfigLandingPageArray = explode('=', $line);
+                if(!isset($routeConfigLandingPageArray[1])) {
+                    fclose($routeConfigFH);
+                    header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_BAD_ROUTE_CONFIG_VAR, true, 500);
+                    exit(0);
+                }
+                $routeConfig[ROUTE_CONFIG_TIMER_CALLBACK_VAR] = $routeConfigLandingPageArray[1];
             }
         }
     }
     fclose($routeConfigFH);
+    if(!verifyRouteConfigArray($routeConfig)) {
+        header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_BAD_ROUTE_CONFIG_VAR, true, 500);
+        exit(0);
+    }
     return $routeConfig;
+}
+
+function checkForMethodFunctionValidity($variable) {
+    if(strpos($variable, ".") !== false) {
+        $classMethodArray = explode(".", $variable);
+        if(!isset($classMethodArray[0]) || !isset($classMethodArray[1]) || !method_exists($classMethodArray[0], $classMethodArray[1])) {
+            return false;
+        }
+    }
+    elseif(!function_exists($variable)) {
+        return false;
+    }
+    return true;
+}
+
+function verifyRouteConfigArray($routeConfig) {
+    //Check required parameters
+    if(!isset($routeConfig[ROUTE_CONFIG_HTTP_PROTOCOLS_VAR]) || !isset($routeConfig[ROUTE_CONFIG_CLASS_NAME_VAR]) || !class_exists($routeConfig[ROUTE_CONFIG_CLASS_NAME_VAR])) {
+        return false;
+    }
+    //Check optional parameters
+    if(isset($routeConfig[ROUTE_CONFIG_TIMER_CALLBACK_VAR]) && !checkForMethodFunctionValidity($routeConfig['timerCallback'])) {
+        return false;
+    }
+    return true;
 }

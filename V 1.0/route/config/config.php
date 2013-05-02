@@ -26,7 +26,8 @@ doDefine('ROUTE_CONFIG','/config/route.config');
 //Route.config constants
 doDefine('ROUTE_CONFIG_COMMENT', '##');
 doDefine('ROUTE_CONFIG_HTTP_PROTOCOLS_VAR','routeHttpProtocols');
-doDefine('ROUTE_CONFIG_LANDING_PAGE_VAR','routeLandingPage');
+doDefine('ROUTE_CONFIG_CLASS_NAME_VAR','routeClassName');
+doDefine('ROUTE_CONFIG_TIMER_CALLBACK_VAR','timerCallback');
 
 //Error codes
 doDefine('ROUTE_ERROR_CONFIG_MISSING', '181');

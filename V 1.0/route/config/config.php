@@ -28,6 +28,7 @@ doDefine('ROUTE_CONFIG_COMMENT', '##');
 doDefine('ROUTE_CONFIG_HTTP_PROTOCOLS_VAR','routeHttpProtocols');
 doDefine('ROUTE_CONFIG_CLASS_NAME_VAR','routeClassName');
 doDefine('ROUTE_CONFIG_TIMER_CALLBACK_VAR','timerCallback');
+doDefine('ROUTE_CONFIG_URL_PORT_IGNORE_VAR','ignoreURLPORT');
 
 //Error codes
 doDefine('ROUTE_ERROR_CONFIG_MISSING', '181');

@@ -22,6 +22,7 @@ class RouteLib {
     private $isPUTAllowed = true;
     private $isDELETEAllowed = true;
     private $timerCallback = null;
+    private $ignoreURLPORT = false;
 
     function __construct($url, $port, $routeConfig) {
         $this->url = $url;
@@ -47,17 +48,23 @@ class RouteLib {
         if(isset($routeConfig[ROUTE_CONFIG_TIMER_CALLBACK_VAR])) {
             $this->timerCallback = $routeConfig[ROUTE_CONFIG_TIMER_CALLBACK_VAR];
         }
+
+        if(isset($routeConfig[ROUTE_CONFIG_URL_PORT_IGNORE_VAR]) && $routeConfig[ROUTE_CONFIG_URL_PORT_IGNORE_VAR] == "true") {
+            $this->ignoreURLPORT = true;
+        }
     }
 
     function checkIfValidRequest() {
-        if(!isset($_SERVER['SERVER_NAME']) || (isset($_SERVER['SERVER_NAME']) && $_SERVER['SERVER_NAME'] != $this->url)) {
-            header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_INCORRECT_HTTP_URL, true, 500);
-            exit(0);
-        }
+        if(!$this->ignoreURLPORT) {
+            if(!isset($_SERVER['SERVER_NAME']) || (isset($_SERVER['SERVER_NAME']) && $_SERVER['SERVER_NAME'] != $this->url)) {
+                header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_INCORRECT_HTTP_URL, true, 500);
+                exit(0);
+            }
 
-        if(!isset($_SERVER['SERVER_PORT']) || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] != $this->port)) {
-            header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_INCORRECT_HTTP_PORT, true, 500);
-            exit(0);
+            if(!isset($_SERVER['SERVER_PORT']) || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] != $this->port)) {
+                header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_INCORRECT_HTTP_PORT, true, 500);
+                exit(0);
+            }
         }
 
         if(!isset($_SERVER['REQUEST_METHOD'])) {
@@ -75,7 +82,6 @@ class RouteLib {
 
     function makeRouteArray($requestMethod) {
         $routeArray = array();
-        $array = array();
 
         $methodNames = get_class_methods($this->routeClass);
         foreach ($methodNames as $methodName) {
@@ -140,9 +146,8 @@ class RouteLib {
                     }
                 }
                 else if(strpos($methodURI,"#") !== false) {
-                    if($methodURI != "#") {
-                        header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_INCORRECT_ANNOTATION, true, 500);
-                        exit(0);
+                    if($methodURI == '#') {
+                        $methodURI = '#';
                     }
                 }
 
@@ -153,14 +158,8 @@ class RouteLib {
                 $tempArray[] = "#";
             }
 
-            $ref = &$array;
-            foreach ($tempArray as $key) {
-                //$ref[$key] = array();
-                $ref = &$ref[$key];
-            }
-            $ref = $methodName;
-
-            $routeArray[$httpMethod[1]] = $array;
+            $routeArray['route'][] = $tempArray;
+            $routeArray['method'][] = $methodName;
         }
 
         return $routeArray;
@@ -173,7 +172,6 @@ class RouteLib {
         $requestURI = $requestURIWithGetParams[0];
 
         $routeArray = $this->makeRouteArray($requestMethod);
-        $previousArray = $routeArray[$requestMethod];
 
         $tempArray = explode("/",$requestURI);
         $requestURIArray = array();
@@ -184,66 +182,55 @@ class RouteLib {
             $requestURIArray[] = $temp;
         }
         $countRequestURIArray = count($requestURIArray);
+        if($countRequestURIArray == 0) {
+            $countRequestURIArray++;
+            $requestURIArray[] = "#";
+        }
 
         $userMethod = "";
-        $functionArguments = array();
-
-        foreach($requestURIArray as $request) {
-            $variableType = "string";
-            if(is_numeric($request)) {
-                $variableType = "number";
+        for($i=0;$i<count($routeArray['route']);$i++) {
+            $userMethod = "";
+            $functionArguments = array();
+            if(count($routeArray['route'][$i]) != $countRequestURIArray) {
+                continue;
             }
+            $routeArrayRoute = $routeArray['route'][$i];
+            $countRouteArrayRoute = count($routeArrayRoute);
+            for($j=0;$j<$countRouteArrayRoute;$j++) {
+                $variableType = "string";
+                if(is_numeric($requestURIArray[$j])) {
+                    $variableType = "number";
+                }
 
-            if(($countRequestURIArray-1) > 0) {
-                if(isset($previousArray[$request]) && is_array($previousArray[$request])) {
-                    $previousArray = $previousArray[$request];
-                    $countRequestURIArray --;
+                if($routeArrayRoute[$j] == $requestURIArray[$j]) {
                     continue;
                 }
-                else if(isset($previousArray[$variableType.":"]) && is_array($previousArray[$variableType.":"])) {
-                    $previousArray = $previousArray[$variableType.":"];
-                    $functionArguments[] = $request;
-                    $countRequestURIArray --;
+                else if($routeArrayRoute[$j] == $variableType.":") {
+                    $functionArguments[] = $requestURIArray[$j];
                     continue;
                 }
-                else if(isset($previousArray[":variable"]) && is_array($previousArray[":variable"])) {
-                    $previousArray = $previousArray[":variable"];
-                    $functionArguments[] = $request;
-                    $countRequestURIArray --;
+                else if($routeArrayRoute[$j] == ":variable") {
+                    $functionArguments[] = $requestURIArray[$j];
                     continue;
                 }
-                else if(isset($previousArray["#"]) && is_array($previousArray["#"])) {
-                    $previousArray = $previousArray["#"];
-                    $countRequestURIArray --;
+                else if($routeArrayRoute[$j] == "#") {
                     continue;
+                }
+                else {
+                    if(strpos($routeArrayRoute[$j],"#") !== false) {
+                        $wcKey = str_replace('#','*',$routeArrayRoute[$j]);
+                        if(fnmatch($wcKey,$requestURIArray[$j])) {
+                            continue;
+                        }
+                    }
                 }
                 break;
             }
-            else {
-                if(isset($previousArray[$request]) && is_string($previousArray[$request])) {
-                    $userMethod = $previousArray[$request];
-                    break;
-                }
-                else if(isset($previousArray[$variableType.":"]) && is_string($previousArray[$variableType.":"])) {
-                    $userMethod = $previousArray[$variableType.":"];
-                    $functionArguments[] = $request;
-                    break;
-                }
-                else if(isset($previousArray[":variable"]) && is_string($previousArray[":variable"])) {
-                    $userMethod = $previousArray[":variable"];
-                    $functionArguments[] = $request;
-                    break;
-                }
-                else if(isset($previousArray["#"]) && is_string($previousArray["#"])) {
-                    $userMethod = $previousArray["#"];
-                    break;
-                }
+            //Now if J has reached the end that means we have found our function
+            if($j >= $countRouteArrayRoute) {
+                $userMethod = $routeArray['method'][$i];
+                break;
             }
-        }
-
-        //Edge case: Check for default '/' and if yes call that function
-        if($countRequestURIArray == 0 && isset($routeArray[$requestMethod]["#"])) {
-            $userMethod = $routeArray[$requestMethod]["#"];
         }
 
         if($userMethod == "") {

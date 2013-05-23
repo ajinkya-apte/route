@@ -22,9 +22,10 @@ function run($url, $port, $getFromRouteConfigFile=true) {
 
 function populateFromRouteConfig($getFromRouteConfigFile=true) {
     $routeConfig = array(
-        'routeHttpProtocols'=>'GET,POST,PUT,DELETE',
-        'routeClassName'=>'Route',
-        'timerCallback'=>'Util.logTime'
+        ROUTE_CONFIG_HTTP_PROTOCOLS_VAR => 'GET,POST,PUT,DELETE',
+        ROUTE_CONFIG_CLASS_NAME_VAR => 'Route',
+        ROUTE_CONFIG_TIMER_CALLBACK_VAR => 'Util.logTime',
+        ROUTE_CONFIG_URL_PORT_IGNORE_VAR => 'true'
     );
 
     if(!$getFromRouteConfigFile) {

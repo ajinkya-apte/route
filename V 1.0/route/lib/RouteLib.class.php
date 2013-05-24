@@ -202,7 +202,7 @@ class RouteLib {
                     $variableType = "number";
                 }
 
-                if($routeArrayRoute[$j] == $requestURIArray[$j]) {
+                if(strtolower($routeArrayRoute[$j]) == strtolower($requestURIArray[$j])) {
                     continue;
                 }
                 else if($routeArrayRoute[$j] == $variableType.":") {

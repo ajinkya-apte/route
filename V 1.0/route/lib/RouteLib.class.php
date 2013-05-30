@@ -172,6 +172,10 @@ class RouteLib {
         $requestURI = $requestURIWithGetParams[0];
 
         $routeArray = $this->makeRouteArray($requestMethod);
+        if(!isset($routeArray['route'])) {
+            header('HTTP/1.1 404 Not found', true, 404);
+            exit(0);
+        }
 
         $tempArray = explode("/",$requestURI);
         $requestURIArray = array();

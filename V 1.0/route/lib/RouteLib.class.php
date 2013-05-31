@@ -73,7 +73,7 @@ class RouteLib {
         }
         else {
             $varName = 'is'.$_SERVER['REQUEST_METHOD'].'Allowed';
-            if(property_exists(__CLASS__, $this->$varName) && !$this->$varName) {
+            if(property_exists(__CLASS__, $varName) && !$this->$varName) {
                 header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_HTTP_METHOD_NOT_SUPPORTED, true, 500);
                 exit(0);
             }

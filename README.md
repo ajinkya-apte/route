@@ -43,6 +43,7 @@ route : PHP REST Framework
     <b>Example end point:</b>
      <code>
          require_once('route/routeHandler.php');
+
          class Route {
              /**
              * @GET='/route/one/two/'
@@ -72,6 +73,7 @@ route : PHP REST Framework
                 echo "@function: four(), @HTTP Request type: DELETE, @Route: '/route/one/#/three'";
              }
          }
+
          /*
          * @params:
          *          serverName: eg => xyz.com
@@ -79,6 +81,7 @@ route : PHP REST Framework
          *          getDataFromConfig => eg => false
          */
          run('localhost', '80', false);
+         
      </code>
  </span>
 =====

@@ -1,5 +1,4 @@
 route : PHP REST Framework
-=====
 @author: Ajinkya Apte
 =====
 <span>
@@ -42,6 +41,7 @@ route : PHP REST Framework
 <span>
     <b>Example end point:</b>
      <code>
+
          require_once('route/routeHandler.php');
 
          class Route {
@@ -81,8 +81,7 @@ route : PHP REST Framework
          *          getDataFromConfig => eg => false
          */
          run('localhost', '80', false);
-         
+
      </code>
  </span>
-=====
 

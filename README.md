@@ -1,6 +1,7 @@
 route : PHP REST Framework
-@author: Ajinkya Apte
 =====
+@author: Ajinkya Apte
+
 <span>
     <b>Description:</b>
 <ol>
@@ -39,9 +40,8 @@ route : PHP REST Framework
  </span>
 =====
 <span>
-    <b>Example end point:</b>
+    <b>Example end point:</b><br/>
      <code>
-
          require_once('route/routeHandler.php');
 
          class Route {

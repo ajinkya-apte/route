@@ -81,7 +81,5 @@ route : PHP REST Framework
          *          getDataFromConfig => eg => false
          */
          run('localhost', '80', false);
-
-     </code>
  </span>
 

@@ -24,6 +24,9 @@ class RouteLib {
     private $timerCallback = null;
     private $ignoreURLPORT = false;
 
+    private $requestMethod = null;
+    private $requestURI = null;
+
     function __construct($url, $port, $routeConfig) {
         $this->url = $url;
         $this->port = $port;
@@ -54,7 +57,7 @@ class RouteLib {
         }
     }
 
-    function checkIfValidRequest() {
+    function checkIfValidRequestAndSetContext() {
         if(!$this->ignoreURLPORT) {
             if(!isset($_SERVER['SERVER_NAME']) || (isset($_SERVER['SERVER_NAME']) && $_SERVER['SERVER_NAME'] != $this->url)) {
                 header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_INCORRECT_HTTP_URL, true, 500);
@@ -67,20 +70,37 @@ class RouteLib {
             }
         }
 
-        if(!isset($_SERVER['REQUEST_METHOD'])) {
-            header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_HTTP_METHOD_NOT_SUPPORTED, true, 500);
-            exit(0);
-        }
-        else {
-            $varName = 'is'.$_SERVER['REQUEST_METHOD'].'Allowed';
-            if(property_exists(__CLASS__, $varName) && !$this->$varName) {
+        $httpHeaders = getallheaders();
+        if(isset($httpHeaders['X-HTTP-Method-Override'])) {
+            $httpHeaders['X-HTTP-Method-Override'] = trim($httpHeaders['X-HTTP-Method-Override']);
+            if($httpHeaders['X-HTTP-Method-Override'] == null || $httpHeaders['X-HTTP-Method-Override'] == "") {
                 header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_HTTP_METHOD_NOT_SUPPORTED, true, 500);
                 exit(0);
             }
+            else {
+                $this->requestMethod = $httpHeaders['X-HTTP-Method-Override'];
+            }
         }
+        else {
+            if(!isset($_SERVER['REQUEST_METHOD'])) {
+                header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_HTTP_METHOD_NOT_SUPPORTED, true, 500);
+                exit(0);
+            }
+            else {
+                $this->requestMethod = $_SERVER['REQUEST_METHOD'];
+            }
+        }
+
+        $varName = 'is'.$this->requestMethod.'Allowed';
+        if(property_exists(__CLASS__, $varName) && !$this->$varName) {
+            header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_HTTP_METHOD_NOT_SUPPORTED, true, 500);
+            exit(0);
+        }
+
+        $this->requestURI = $_SERVER['REQUEST_URI'];
     }
 
-    function makeRouteArray($requestMethod) {
+    function makeRouteArray() {
         $routeArray = array();
 
         $methodNames = get_class_methods($this->routeClass);
@@ -103,7 +123,7 @@ class RouteLib {
             }
 
             $httpMethod = explode("@",$httpURIArray[0]);
-            if($httpMethod[1] != $requestMethod) {
+            if($httpMethod[1] != $this->requestMethod) {
                 continue;
             }
 
@@ -167,11 +187,10 @@ class RouteLib {
 
     function callUsersFunction() {
 
-        $requestMethod = $_SERVER['REQUEST_METHOD'];
-        $requestURIWithGetParams = explode("?",$_SERVER['REQUEST_URI']);
+        $requestURIWithGetParams = explode("?",$this->requestURI);
         $requestURI = $requestURIWithGetParams[0];
 
-        $routeArray = $this->makeRouteArray($requestMethod);
+        $routeArray = $this->makeRouteArray();
         if(!isset($routeArray['route'])) {
             header('HTTP/1.1 404 Not found', true, 404);
             exit(0);
@@ -253,7 +272,7 @@ class RouteLib {
                 'startTime'=> $startLogTime,
                 'endTime'=> $endLogTime,
                 'elapsedTime'=> $elapsedTime,
-                'requestMethod' => $requestMethod,
+                'requestMethod' => $this->requestMethod,
                 'url' => $requestURI,
                 'userMethod'=> $userMethod,
                 'functionalArguments' => $functionArguments
@@ -270,7 +289,7 @@ class RouteLib {
     }
 
     function run() {
-        $this->checkIfValidRequest();
+        $this->checkIfValidRequestAndSetContext();
         $this->callUsersFunction();
     }
 }

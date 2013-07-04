@@ -1,9 +1,9 @@
 route : PHP REST Framework
 =====
 @author: Ajinkya Apte
-
+=====
 <span>
-    Description:
+    <b>Description:</b>
 <ol>
     <li>Simple setup and get going within minutes</li>
     <li>Just register a PHP class with the framework and write annotations to your class methods</li>
@@ -12,9 +12,9 @@ route : PHP REST Framework
     <li>Support for X-HTTP-Method-Override</li>
 </ol>
 </span>
-
+=====
 <span>
-    Usage:
+    <b>Usage:</b>
 <ul>
     <li>annotationFormat: @(HTTP method type)='(URL)'</li>
     <li>annotationOptions:
@@ -29,7 +29,7 @@ route : PHP REST Framework
     <li>success: Calls the user defined function based on the annotation</li>
     <li>error: HTTP 500
         <ol>
-            <li>'ROUTE_ERROR_CONFIG_MISSING' => '181';<li>
+            <li>'ROUTE_ERROR_CONFIG_MISSING' => '181';</li>
             <li>'ROUTE_ERROR_BAD_ROUTE_CONFIG_VAR' => '182'</li>
             <li>'ROUTE_ERROR_INCORRECT_HTTP_URL' => '183'</li>
             <li>'ROUTE_ERROR_INCORRECT_HTTP_PORT' => '184'</li>
@@ -38,41 +38,40 @@ route : PHP REST Framework
         </ol>
 </ul>
  </span>
-
+=====
 <span>
+    <b>Example end point:</b>
      <code>
          require_once('route/routeHandler.php');
-
          class Route {
-         /**
-         * @GET='/route/one/two/'
-         */
-         function one() {
-         echo "@function: one(), @HTTP Request type: GET, @Route: '/route/one/two/'";
-         }
+             /**
+             * @GET='/route/one/two/'
+             */
+             function one() {
+                echo "@function: one(), @HTTP Request type: GET, @Route: '/route/one/two/'";
+             }
 
-         /**
-         * @POST='/route/one/number:two/three/:/five'
-         */
-         function two($two, $four) {
-         echo "@function: two(), @params: $two $four, @HTTP Request type: POST, @Route: '/route/one/number:two/three/:/five'";
-         }
+             /**
+             * @POST='/route/one/number:two/three/:/five'
+             */
+             function two($two, $four) {
+                echo "@function: two(), @params: $two $four, @HTTP Request type: POST, @Route: '/route/one/number:two/three/:/five'";
+             }
 
-         /**
-         * @PUT='/route/one/string:/three/'
-         */
-         function three($two) {
-         echo "@function: three(), @params: $two, @HTTP Request type: PUT, @Route: '/route/one/string:/three/'";
-         }
+             /**
+             * @PUT='/route/one/string:/three/'
+             */
+             function three($two) {
+                echo "@function: three(), @params: $two, @HTTP Request type: PUT, @Route: '/route/one/string:/three/'";
+             }
 
-         /**
-         * @DELETE='/route/one/#/three'
-         */
-         function four() {
-         echo "@function: four(), @HTTP Request type: DELETE, @Route: '/route/one/#/three'";
+             /**
+             * @DELETE='/route/one/#/three'
+             */
+             function four() {
+                echo "@function: four(), @HTTP Request type: DELETE, @Route: '/route/one/#/three'";
+             }
          }
-         }
-
          /*
          * @params:
          *          serverName: eg => xyz.com
@@ -82,5 +81,5 @@ route : PHP REST Framework
          run('localhost', '80', false);
      </code>
  </span>
-
+=====
 

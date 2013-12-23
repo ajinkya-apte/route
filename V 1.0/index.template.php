@@ -29,28 +29,28 @@ require_once('route/routeHandler.php');
 
 class Route {
     /**
-     * @GET='/route/one/two/'
+     * @route|GET='/route/one/two/'
      */
     function one() {
         echo "@function: one(), @HTTP Request type: GET, @Route: '/route/one/two/'";
     }
 
     /**
-     * @POST='/route/one/number:two/three/:/five'
+     * @route|POST='/route/one/number:two/three/:/five'
      */
     function two($two, $four) {
         echo "@function: two(), @params: $two $four, @HTTP Request type: POST, @Route: '/route/one/number:two/three/:/five'";
     }
 
     /**
-     * @PUT='/route/one/string:/three/'
+     * @route|PUT='/route/one/string:/three/'
      */
     function three($two) {
         echo "@function: three(), @params: $two, @HTTP Request type: PUT, @Route: '/route/one/string:/three/'";
     }
 
     /**
-     * @DELETE='/route/one/#/three'
+     * @route|DELETE='/route/one/#/three'
      */
     function four() {
         echo "@function: four(), @HTTP Request type: DELETE, @Route: '/route/one/#/three'";

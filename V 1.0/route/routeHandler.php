@@ -25,8 +25,8 @@ function populateFromRouteConfig($getFromRouteConfigFile=true) {
     $routeConfig = array(
         ROUTE_CONFIG_HTTP_PROTOCOLS_VAR => 'GET,POST,PUT,DELETE',
         ROUTE_CONFIG_CLASS_NAME_VAR => 'Route',
-        ROUTE_CONFIG_SHUTDOWN_CALLBACK_VAR => 'Util.shutdown',
-        ROUTE_CONFIG_TIMER_CALLBACK_VAR => 'Util.logTime',
+        //ROUTE_CONFIG_SHUTDOWN_CALLBACK_VAR => 'Util.shutdown',
+        //ROUTE_CONFIG_TIMER_CALLBACK_VAR => 'Util.logTime',
         ROUTE_CONFIG_URL_PORT_IGNORE_VAR => 'true'
     );
 

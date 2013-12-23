@@ -15,15 +15,17 @@ require_once(dirname(__FILE__).'/config/config.php');
 require_once(dirname(__FILE__).'/lib/RouteLib.class.php');
 
 function run($url, $port, $getFromRouteConfigFile=true) {
-    $routeLib = new RouteLib($url, $port, populateFromRouteConfig($getFromRouteConfigFile));
-    $routeLib->run();
-
+    if(PHP_SAPI !== 'cli') {
+        $routeLib = new RouteLib($url, $port, populateFromRouteConfig($getFromRouteConfigFile));
+        $routeLib->run();
+    }
 }
 
 function populateFromRouteConfig($getFromRouteConfigFile=true) {
     $routeConfig = array(
         ROUTE_CONFIG_HTTP_PROTOCOLS_VAR => 'GET,POST,PUT,DELETE',
         ROUTE_CONFIG_CLASS_NAME_VAR => 'Route',
+        ROUTE_CONFIG_SHUTDOWN_CALLBACK_VAR => 'Util.shutdown',
         ROUTE_CONFIG_TIMER_CALLBACK_VAR => 'Util.logTime',
         ROUTE_CONFIG_URL_PORT_IGNORE_VAR => 'true'
     );
@@ -72,6 +74,15 @@ function populateFromRouteConfig($getFromRouteConfigFile=true) {
                 }
                 $routeConfig[ROUTE_CONFIG_TIMER_CALLBACK_VAR] = $routeConfigLandingPageArray[1];
             }
+            else if(strpos($line, ROUTE_CONFIG_SHUTDOWN_CALLBACK_VAR) !== false) {
+                $routeConfigLandingPageArray = explode('=', $line);
+                if(!isset($routeConfigLandingPageArray[1])) {
+                    fclose($routeConfigFH);
+                    header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_BAD_ROUTE_CONFIG_VAR, true, 500);
+                    exit(0);
+                }
+                $routeConfig[ROUTE_CONFIG_SHUTDOWN_CALLBACK_VAR] = $routeConfigLandingPageArray[1];
+            }
         }
     }
     fclose($routeConfigFH);
@@ -101,7 +112,10 @@ function verifyRouteConfigArray($routeConfig) {
         return false;
     }
     //Check optional parameters
-    if(isset($routeConfig[ROUTE_CONFIG_TIMER_CALLBACK_VAR]) && !checkForMethodFunctionValidity($routeConfig['timerCallback'])) {
+    if(isset($routeConfig[ROUTE_CONFIG_TIMER_CALLBACK_VAR]) && !checkForMethodFunctionValidity($routeConfig[ROUTE_CONFIG_TIMER_CALLBACK_VAR])) {
+        return false;
+    }
+    if(isset($routeConfig[ROUTE_CONFIG_SHUTDOWN_CALLBACK_VAR]) && !checkForMethodFunctionValidity($routeConfig[ROUTE_CONFIG_SHUTDOWN_CALLBACK_VAR])) {
         return false;
     }
     return true;

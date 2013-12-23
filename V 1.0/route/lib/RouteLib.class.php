@@ -21,6 +21,7 @@ class RouteLib {
     private $isPOSTAllowed = true;
     private $isPUTAllowed = true;
     private $isDELETEAllowed = true;
+    private $shutdownCallback = null;
     private $timerCallback = null;
     private $ignoreURLPORT = false;
 
@@ -48,6 +49,10 @@ class RouteLib {
             $this->isDELETEAllowed = false;
         }
 
+        if(isset($routeConfig[ROUTE_CONFIG_SHUTDOWN_CALLBACK_VAR])) {
+            $this->shutdownCallback = $routeConfig[ROUTE_CONFIG_SHUTDOWN_CALLBACK_VAR];
+        }
+
         if(isset($routeConfig[ROUTE_CONFIG_TIMER_CALLBACK_VAR])) {
             $this->timerCallback = $routeConfig[ROUTE_CONFIG_TIMER_CALLBACK_VAR];
         }
@@ -71,14 +76,26 @@ class RouteLib {
         }
 
         $httpHeaders = getallheaders();
-        if(isset($httpHeaders['X-HTTP-Method-Override'])) {
-            $httpHeaders['X-HTTP-Method-Override'] = trim($httpHeaders['X-HTTP-Method-Override']);
-            if($httpHeaders['X-HTTP-Method-Override'] == null || $httpHeaders['X-HTTP-Method-Override'] == "") {
+        $httpMethodOverrideHeader = 'X-HTTP-Method-Override';
+        if(isset($httpHeaders[$httpMethodOverrideHeader])) {
+            $httpHeaders[$httpMethodOverrideHeader] = trim($httpHeaders[$httpMethodOverrideHeader]);
+            if($httpHeaders[$httpMethodOverrideHeader] === null || $httpHeaders[$httpMethodOverrideHeader] === "") {
                 header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_HTTP_METHOD_NOT_SUPPORTED, true, 500);
                 exit(0);
             }
             else {
-                $this->requestMethod = $httpHeaders['X-HTTP-Method-Override'];
+                $this->requestMethod = $_SERVER['REQUEST_METHOD'] = $httpHeaders[$httpMethodOverrideHeader];
+            }
+        }
+        else if(isset($httpHeaders[strtolower($httpMethodOverrideHeader)])) {
+            $httpMethodOverrideHeaderLower = strtolower($httpMethodOverrideHeader);
+            $httpHeaders[$httpMethodOverrideHeaderLower] = trim($httpHeaders[$httpMethodOverrideHeaderLower]);
+            if($httpHeaders[$httpMethodOverrideHeaderLower] === null || $httpHeaders[$httpMethodOverrideHeaderLower] === "") {
+                header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_HTTP_METHOD_NOT_SUPPORTED, true, 500);
+                exit(0);
+            }
+            else {
+                $this->requestMethod = $_SERVER['REQUEST_METHOD'] = $httpHeaders[$httpMethodOverrideHeaderLower];
             }
         }
         else {
@@ -106,24 +123,41 @@ class RouteLib {
         $methodNames = get_class_methods($this->routeClass);
         foreach ($methodNames as $methodName) {
             $method = new ReflectionMethod($this->routeClass, $methodName);
-            $fullAnnotation = $method->getDocComment();
-            if($fullAnnotation === false) {
+            $fullAnnotationString = $method->getDocComment();
+            if($fullAnnotationString === false) {
                 continue;
             }
 
-            //Eg: @GET='/one/two/'
-            //Eg: @GET='/one/integer:two/' => /one/integer:/
-            //Eg: @GET='/one/:/'
-            //Eg: @GET='/one/:two/' => /one/:two/
+            $routeString = "";
+            $fullAnnotationArray = explode("\n",$fullAnnotationString);
+            foreach($fullAnnotationArray as $fullAnnotation) {
+                if(strpos($fullAnnotation,"@route|") !== false) {
+                    $tempString = explode("@route|",$fullAnnotation);
+                    if(count($tempString) != 2) {
+                        continue;
+                    }
+                    $routeString = trim($tempString[1]);
+                }
+            }
 
-            $httpURIArray = explode('=', $fullAnnotation);
+            //If there is no comment with the keyword @route then continue to the next function
+            if($routeString === "") {
+                continue;
+            }
+
+            //Eg: GET='/one/two/'
+            //Eg: GET='/one/integer:two/' => /one/integer:/
+            //Eg: GET='/one/:/'
+            //Eg: GET='/one/:two/' => /one/:two/
+
+            $httpURIArray = explode('=', $routeString);
             if(!isset($httpURIArray[0]) || !isset($httpURIArray[1])) {
                 header('HTTP/1.1 500 Internal Server Error: Route: '.ROUTE_ERROR_INCORRECT_ANNOTATION, true, 500);
                 exit(0);
             }
 
-            $httpMethod = explode("@",$httpURIArray[0]);
-            if($httpMethod[1] != $this->requestMethod) {
+            //$httpMethod = explode("@",$httpURIArray[0]);
+            if(strtoupper($httpURIArray[0]) != strtoupper($this->requestMethod)) {
                 continue;
             }
 
@@ -262,6 +296,26 @@ class RouteLib {
         }
 
         $startLogTime = microtime(true);
+
+        //Register the Shutdown callback
+        if($this->shutdownCallback !== null) {
+            $logArguments = array(
+                'callerClass' => $this->routeClass,
+                'startTime'=> $startLogTime,
+                'requestMethod' => $this->requestMethod,
+                'url' => $requestURI,
+                'userMethod'=> $userMethod,
+                'functionalArguments' => $functionArguments
+            );
+            if(strpos($this->shutdownCallback, ".") !== false) {
+                $classMethodArray = explode(".", $this->shutdownCallback);
+                register_shutdown_function(array( $classMethodArray[0], $classMethodArray[1]),$logArguments);
+            }
+            else {
+                register_shutdown_function($this->timerCallback,$logArguments);
+            }
+        }
+
         call_user_func_array( array( new $this->routeClass, $userMethod), $functionArguments );
         $endLogTime = microtime(true);
 

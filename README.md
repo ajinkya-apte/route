@@ -9,6 +9,7 @@ route : PHP REST Framework
     <li>Just register a PHP class with the framework and write annotations to your class methods</li>
     <li>HTTP calls are routed to your class methods based on the annotations</li>
     <li>Framework records execution time of the user defined class method and calls a user registered function for logging</li>
+    <li>Calls a shutdown function at the end if registered</li>
     <li>Support for X-HTTP-Method-Override</li>
 </ol>
 </span>
@@ -16,7 +17,7 @@ route : PHP REST Framework
 <span>
     <b>Usage:</b>
 <ul>
-    <li>annotationFormat: @(HTTP method type)='(URL)'</li>
+    <li>annotationFormat: @route|(HTTP method type)='(URL)'</li>
     <li>annotationOptions:
         <ol>
             <li>URL name => /route/</li>
@@ -46,28 +47,28 @@ route : PHP REST Framework
 
          class Route {
              /**
-             * @GET='/route/one/two/'
+             * @route|GET='/route/one/two/'
              */
              function one() {
                 echo "@function: one(), @HTTP Request type: GET, @Route: '/route/one/two/'";
              }
 
              /**
-             * @POST='/route/one/number:two/three/:/five'
+             * @route|POST='/route/one/number:two/three/:/five'
              */
              function two($two, $four) {
                 echo "@function: two(), @params: $two $four, @HTTP Request type: POST, @Route: '/route/one/number:two/three/:/five'";
              }
 
              /**
-             * @PUT='/route/one/string:/three/'
+             * @route|PUT='/route/one/string:/three/'
              */
              function three($two) {
                 echo "@function: three(), @params: $two, @HTTP Request type: PUT, @Route: '/route/one/string:/three/'";
              }
 
              /**
-             * @DELETE='/route/one/#/three'
+             * @route|DELETE='/route/one/#/three'
              */
              function four() {
                 echo "@function: four(), @HTTP Request type: DELETE, @Route: '/route/one/#/three'";
